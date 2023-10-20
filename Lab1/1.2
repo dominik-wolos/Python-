@@ -48,9 +48,9 @@ def resolveMeanToStdRatio():
 
 def sumElementsThatAreGreaterThanMean():
     array = getExcelArray()
-    arrayAvg = np.spacing(array.mean(axis=0))
+    arrayAvg = array.mean(axis=0)
 
-    return array.sum(axis=0, where=array > arrayAvg)
+    return (array > arrayAvg).sum(axis=0)
 
 def resolveColumnsContainingMaxArrayElement():
     df = getExcelDataFrame()
@@ -94,18 +94,10 @@ meanToStdRatio = resolveMeanToStdRatio()
 # 1.5
 highestMeanToStdRatio = max(meanToStdRatio)
 # 1.6
-summedHigherThanMean = sumElementsThatAreGreaterThanMean()
+countHigherThanMean = sumElementsThatAreGreaterThanMean()
 # 1.7
 columnsContainingMaxElement = resolveColumnsContainingMaxArrayElement()
 # 1.8
 columnsContaining0 = resolveColumnsContainingExactValue(0)
 #1.9
 columnsWithOddElementsGreaterThantOdd = findColumnsWhereEvenRowsSumIsGreaterThatnOddRowsSum()
-
-print("Columns containing 0: ", columnsContaining0)
-print("Columns containing max element: ", columnsContainingMaxElement)
-print("Columns with odd elements greater than even: ", columnsWithOddElementsGreaterThantOdd)
-print("Summed higher than mean: ", summedHigherThanMean)
-print("Highest mean to std ratio: ", highestMeanToStdRatio)
-print("Mean to std ratio: ", meanToStdRatio)
-print("Modified excel array by columns: ", modifiedExcelArrayByColumns)
