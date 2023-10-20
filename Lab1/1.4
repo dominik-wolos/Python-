@@ -1,0 +1,26 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+FILENAME = "practice_lab_1.xlsx"
+data = pd.read_excel(FILENAME)
+correlation_matrix = data.corr()
+n = correlation_matrix.shape[0]
+
+fig, axes = plt.subplots(n, n, figsize=(10, 10), sharex='col', sharey='row')
+plt.subplots_adjust(wspace=0, hspace=0)
+
+for i in range(n):
+    for j in range(n):
+        if i != j:
+            axes[i, j].scatter(data.iloc[:, i], data.iloc[:, j], s=10, alpha=0.6)
+        else:
+            axes[i, j].hist(data.iloc[:, i], bins=15, alpha=0.6, color='blue', edgecolor='black')
+
+for i in range(n):
+    for j in range(n):
+        if i == 0:
+            axes[i, j].set_title(data.columns[j])
+        if j == 0:
+            axes[i, j].set_ylabel(data.columns[i])
+
+plt.show()
