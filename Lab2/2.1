@@ -1,0 +1,19 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+FILENAME = "practice_lab_2.csv"
+data = pd.read_csv(FILENAME, sep=';')
+correlation_matrix = data.corr()
+n = len(data.columns)
+
+fig, axes = plt.subplots(n, n, figsize=(14, 14))
+
+for i in range(n):
+    for j in range(n):
+        if i != j:
+            axes[i, j].scatter(data.iloc[:, i], data.iloc[:, j])
+            axes[i, j].set_xlabel(data.columns[i])
+            axes[i, j].set_xlabel(data.columns[j])
+
+plt.tight_layout()
+plt.show()
