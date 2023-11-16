@@ -1,0 +1,20 @@
+import pandas as pd
+import functions as f
+
+data = pd.read_csv('practice_lab_3.csv', sep=';')
+columns = list(data.columns)
+
+data = f.mapStringsToValues(data)
+X, y = f.extractYFromData(data, 'Loan_Status')
+f.trainModels(X, y, scaler=True)
+print('\n' * 5)
+f.trainModels(X, y, scaler=True, kernel='rbf', n_neighbors=3, weight='uniform')
+print('**')
+print('\n' * 5)
+f.trainModels(X, y, scaler=True, kernel='linear', n_neighbors=3, weight='distance')
+print('**')
+print('\n' * 5)
+f.trainModels(X, y, scaler=True, kernel='sigmoid', n_neighbors=3, weight='uniform')
+print('\n' * 5)
+
+print('Done')
