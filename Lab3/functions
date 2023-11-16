@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 from sklearn.neighbors import KNeighborsClassifier as kNN
 from sklearn.svm import SVC as SVM
@@ -5,6 +6,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier as DT
 from sklearn.tree import plot_tree
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import RobustScaler
 
 import pandas as pd
 
@@ -15,7 +18,7 @@ def oneHot(data, column):
 
     return data.drop(columns=[column])
 
-def maskAndFilter(originalData, column, value):
+def qualtativeToBinary(originalData, column, value):
     newData = originalData.copy()
     mask = newData[column].values == value
     newData[column][mask] = 1
@@ -30,48 +33,80 @@ def extractYFromData(data, column):
     return x, y
 
 
-def useScaler(X_train, X_test):
-    scaler = StandardScaler()
+def useScaler(X_train, X_test, scalerClass):
+    print(f'Scaler: {scalerClass.__name__}')
+    scaler = scalerClass()
     scaler.fit(X_train)
 
     return scaler.transform(X_train), scaler.transform(X_test)
 
+def metrics(y_test, y_pred):
+    cm = confusion_matrix(y_test, y_pred)
+    sensitivity = cm[0][0] / (cm[0][0] + cm[0][1])
+    specificity = cm[1][1] / (cm[1][0] + cm[1][1])
+    precision = cm[0][0] / (cm[0][0] + cm[1][0])
+    accuracy = (cm[0][0] + cm[1][1]) / (cm[0][0] + cm[1][1] + cm[0][1] + cm[1][0])
 
-def trainModels(X, y, scaler=False):
+    print(f'Confusion matrix: {cm}')
+
+    print(f'Sensitivity: {sensitivity}')
+    print(f'Specificity: {specificity}')
+    print(f'Precision: {precision}')
+    print(f'Accuracy: {accuracy}')
+
+
+def trainModels(X, y, scaler=False, scalerClass = StandardScaler, n_neighbors=5, weight='uniform', kernel='rbf'):
     X_train, X_test, y_train, y_test = (
         train_test_split(X, y, test_size=0.2, random_state=221, shuffle=False)
     )
 
     if scaler:
-        X_train, X_test = useScaler(X_train, X_test)
+        X_train, X_test = useScaler(X_train, X_test, scalerClass)
 
     models = [
-        kNN(),
-        SVM()
+        [
+          kNN(n_neighbors=n_neighbors , weights=weight),
+            'n_neighbors = ' + str(n_neighbors) + ', weights = ' + weight
+        ],
+        [
+            SVM(kernel=kernel),
+            'kernel = ' + kernel
+        ]
     ]
 
-    for model in models:
+    for arr in models:
+        model, details = arr
+
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
-        print(confusion_matrix(y_test, y_pred))
+        print(f'{model.__class__.__name__}: {details}')
+        metrics(y_test, y_pred)
+        print('\n' * 2)
 
 def mapStringsToValues(data):
-    data = maskAndFilter(data, 'Gender', 'Female')
-    data = maskAndFilter(data, 'Education', 'Graduate')
-    data = maskAndFilter(data, 'Self_Employed', 'Yes')
-    data = maskAndFilter(data, 'Married', 'Yes')
+    data = qualtativeToBinary(data, 'Gender', 'Female')
+    data = qualtativeToBinary(data, 'Education', 'Graduate')
+    data = qualtativeToBinary(data, 'Self_Employed', 'Yes')
+    data = qualtativeToBinary(data, 'Married', 'Yes')
 
     return oneHot(data, 'Property_Area')
 
-def decisionTree(X, y):
+def decisionTree(X, y, data, max_depth=3):
     X_train, X_test, y_train, y_test = (
         train_test_split(X, y, test_size=0.2, random_state=221, shuffle=False)
     )
-    
-    model = DT(max_depth=3)
+
+    model = DT(max_depth=max_depth)
     model.fit(X_train, y_train)
     y_pred = model.predict(X_test)
-    cm = confusion_matrix(y_test, y_pred)
+    print(confusion_matrix(y_test, y_pred))
 
-    print(cm)
+    plt.figure(figsize=(40, 20))
 
+    tree_vis = plot_tree(model, feature_names=
+             data.columns[:-1].tolist(),
+            class_names=['No', 'Yes'],
+            fontsize=20
+         )
+
+    plt.show()
