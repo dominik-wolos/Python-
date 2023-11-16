@@ -1,0 +1,17 @@
+import pandas as pd
+import functions as f
+from sklearn.datasets import load_breast_cancer
+
+breastCancerData = load_breast_cancer()
+df = pd.DataFrame(breastCancerData.data, columns=breastCancerData.feature_names)
+
+y = breastCancerData['target']
+X = df.values
+
+f.trainModels(X, y, scaler=True, scalerClass=f.StandardScaler, n_neighbors=5, weight='distance', kernel='sigmoid')
+f.trainModels(X, y, scaler=True, scalerClass=f.MinMaxScaler, n_neighbors=3, weight='uniform', kernel='rbf')
+f.trainModels(X, y, scaler=True, scalerClass=f.RobustScaler, n_neighbors=7, weight='uniform', kernel='linear')
+
+f.decisionTree(X, y, df, max_depth=5)
+
+print('Done')
