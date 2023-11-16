@@ -1,0 +1,77 @@
+from sklearn.metrics import confusion_matrix
+from sklearn.neighbors import KNeighborsClassifier as kNN
+from sklearn.svm import SVC as SVM
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier as DT
+from sklearn.tree import plot_tree
+
+import pandas as pd
+
+def oneHot(data, column):
+    cat_feature = pd.Categorical(data[column])
+    one_hot = pd.get_dummies(cat_feature)
+    data = pd.concat([data, one_hot], axis=1)
+
+    return data.drop(columns=[column])
+
+def maskAndFilter(originalData, column, value):
+    newData = originalData.copy()
+    mask = newData[column].values == value
+    newData[column][mask] = 1
+    newData[column][~mask] = 0
+
+    return newData
+
+def extractYFromData(data, column):
+    y = data[column].values
+    x = data.drop(columns=[column]).values
+
+    return x, y
+
+
+def useScaler(X_train, X_test):
+    scaler = StandardScaler()
+    scaler.fit(X_train)
+
+    return scaler.transform(X_train), scaler.transform(X_test)
+
+
+def trainModels(X, y, scaler=False):
+    X_train, X_test, y_train, y_test = (
+        train_test_split(X, y, test_size=0.2, random_state=221, shuffle=False)
+    )
+
+    if scaler:
+        X_train, X_test = useScaler(X_train, X_test)
+
+    models = [
+        kNN(),
+        SVM()
+    ]
+
+    for model in models:
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        print(confusion_matrix(y_test, y_pred))
+
+def mapStringsToValues(data):
+    data = maskAndFilter(data, 'Gender', 'Female')
+    data = maskAndFilter(data, 'Education', 'Graduate')
+    data = maskAndFilter(data, 'Self_Employed', 'Yes')
+    data = maskAndFilter(data, 'Married', 'Yes')
+
+    return oneHot(data, 'Property_Area')
+
+def decisionTree(X, y):
+    X_train, X_test, y_train, y_test = (
+        train_test_split(X, y, test_size=0.2, random_state=221, shuffle=False)
+    )
+    
+    model = DT(max_depth=3)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+
+    print(cm)
+
