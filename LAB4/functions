@@ -1,0 +1,142 @@
+import matplotlib.pyplot as plt
+from sklearn.metrics import confusion_matrix
+from sklearn.neighbors import KNeighborsClassifier as kNN
+from sklearn.svm import SVC as SVM
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.tree import DecisionTreeClassifier as DT
+from sklearn.tree import plot_tree
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import RobustScaler
+from sklearn.decomposition import PCA
+import numpy as np
+
+import pandas as pd
+
+def oneHot(data, column):
+    cat_feature = pd.Categorical(data[column])
+    one_hot = pd.get_dummies(cat_feature)
+    data = pd.concat([data, one_hot], axis=1)
+
+    return data.drop(columns=[column])
+
+def qualtativeToBinary(originalData, column, value):
+    newData = originalData.copy()
+    mask = newData[column].values == value
+    newData[column][mask] = 1
+    newData[column][~mask] = 0
+
+    return newData
+
+def extractYFromData(data, column):
+    y = data[column].values
+    x = data.drop(columns=[column]).values
+
+    return x, y
+
+
+def useScaler(X_train, X_test, scalerClass):
+    print(f'Scaler: {scalerClass.__name__}')
+    scaler = scalerClass()
+    scaler.fit(X_train)
+
+    return scaler.transform(X_train), scaler.transform(X_test)
+
+def metrics(y_test, y_pred):
+    cm = confusion_matrix(y_test, y_pred)
+    sensitivity = cm[0][0] / (cm[0][0] + cm[0][1])
+    specificity = cm[1][1] / (cm[1][0] + cm[1][1])
+    precision = cm[0][0] / (cm[0][0] + cm[1][0])
+    accuracy = (cm[0][0] + cm[1][1]) / (cm[0][0] + cm[1][1] + cm[0][1] + cm[1][0])
+
+    print(f'Confusion matrix: {cm}')
+
+    print(f'Sensitivity: {sensitivity}')
+    print(f'Specificity: {specificity}')
+    print(f'Precision: {precision}')
+    print(f'Accuracy: {accuracy}')
+
+
+def trainModels(X, y, scaler=False, scalerClass = StandardScaler, n_neighbors=5, weight='uniform', kernel='rbf'):
+    X_train, X_test, y_train, y_test = (
+        train_test_split(X, y, test_size=0.2, random_state=221, shuffle=False)
+    )
+
+    if scaler:
+        X_train, X_test = useScaler(X_train, X_test, scalerClass)
+
+    models = [
+        [
+          kNN(n_neighbors=n_neighbors , weights=weight),
+            'n_neighbors = ' + str(n_neighbors) + ', weights = ' + weight
+        ],
+        [
+            SVM(kernel=kernel),
+            'kernel = ' + kernel
+        ]
+    ]
+
+    for arr in models:
+        model, details = arr
+
+        model.fit(X_train, y_train)
+        y_pred = model.predict(X_test)
+        print(f'{model.__class__.__name__}: {details}')
+        metrics(y_test, y_pred)
+        print('\n' * 2)
+
+def mapStringsToValues(data):
+    data = qualtativeToBinary(data, 'Gender', 'Female')
+    data = qualtativeToBinary(data, 'Education', 'Graduate')
+    data = qualtativeToBinary(data, 'Self_Employed', 'Yes')
+    data = qualtativeToBinary(data, 'Married', 'Yes')
+
+    return oneHot(data, 'Property_Area')
+
+def decisionTree(X, y, data, max_depth=3):
+    X_train, X_test, y_train, y_test = (
+        train_test_split(X, y, test_size=0.2, random_state=221, shuffle=False)
+    )
+
+    model = DT(max_depth=max_depth)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+    print(confusion_matrix(y_test, y_pred))
+
+    plt.figure(figsize=(40, 20))
+
+    tree_vis = plot_tree(model, feature_names=
+             data.columns[:-1].tolist(),
+            class_names=['No', 'Yes'],
+            fontsize=20
+         )
+
+    plt.show()
+
+def varianceExplained(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    pca_transform = PCA()
+    pca_transform.fit(X_train)
+
+    variances = pca_transform.explained_variance_ratio_
+    cumulative_variance = np.cumsum(variances)
+    plt.scatter(np.arange(variances.shape[0]), cumulative_variance)
+    plt.yticks(np.arange(0, 1.1, 0.1))
+    PC_num = (cumulative_variance <= 0.95).sum()
+
+    print(f'Number of PCs explaining 95% of variance: {PC_num}')
+    plt.show()
+
+def visualisationPCA(X, y):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, shuffle=False)
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_paced = PCA(2).fit_transform(X_train)
+    fig, ax = plt.subplots(1, 1)
+    females = y_train == 1
+    ax.scatter(X_paced[females, 0], X_paced[females, 1],label='female')
+    ax.scatter(X_paced[~females, 0], X_paced[~females, 1],label='male')
+    ax.legend()
+    plt.show()
