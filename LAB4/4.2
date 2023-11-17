@@ -1,0 +1,20 @@
+import numpy as np
+import pandas as pd
+import functions as func
+
+data = pd.read_csv('voice_extracted_features.csv', sep=',')
+data = func.qualtativeToBinary(data, 'label', 'female')
+features = data.columns
+vals = data.values.astype(np.float64)
+
+X = vals[:, :-1]
+y = vals[:, -1]
+
+models = [
+    func.kNN(n_neighbors=5, weights='uniform'),
+    func.SVM(kernel='rbf'),
+    func.DT(),
+]
+
+for model in models:
+    func.meanConfusionMatrix(X, y, model, 30)
