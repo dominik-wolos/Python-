@@ -10,6 +10,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import RobustScaler
 from sklearn.decomposition import PCA
 import numpy as np
+from sklearn.pipeline import Pipeline
 
 import pandas as pd
 
@@ -36,7 +37,7 @@ def extractYFromData(data, column):
 
 
 def useScaler(X_train, X_test, scalerClass):
-    print(f'Scaler: {scalerClass.__name__}')
+   # print(f'Scaler: {scalerClass.__name__}')
     scaler = scalerClass()
     scaler.fit(X_train)
 
@@ -140,3 +141,22 @@ def visualisationPCA(X, y):
     ax.scatter(X_paced[~females, 0], X_paced[~females, 1],label='male')
     ax.legend()
     plt.show()
+    
+def meanConfusionMatrix(X, y, model, learningCycle):
+    res = np.zeros((2, 2))
+    args = (['transformer', PCA(n_components=12)],
+            ['scaler', StandardScaler()],
+            ['classifier', model]
+    )
+
+    for i in range(learningCycle):
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=221, shuffle=False)
+        X_train, X_test = useScaler(X_train, X_test, StandardScaler)
+        pipe = Pipeline(args)
+        pipe.fit(X_train, y_train)
+        y_pred = pipe.predict(X_test)
+        res += confusion_matrix(y_test, y_pred)
+
+    print(f'Confusion matrix: {res/learningCycle}')
+
+    
