@@ -16,6 +16,8 @@ def prepareModel(X, y, class_num, learning_rate = 0.00001):
     X_test = scaler.transform(X_test)
     model.fit(X_train, y_train, batch_size=32, epochs=500, validation_data=(X_test, y_test))
 
+    return model
+
 def resolveOutput(model):
     history = model.history.history
     floss_train = history['loss']
@@ -33,6 +35,7 @@ def resolveOutput(model):
     ax[1].plot(epochs, acc_train, label='acc_train')
     ax[1].plot(epochs, acc_test, label='acc_test')
     ax[1].legend()
+    plt.show()
 
 def createModel(X, class_num, learning_rate = 0.00001):
     model = Sequential()
@@ -45,6 +48,8 @@ def createModel(X, class_num, learning_rate = 0.00001):
 
     model.compile(optimizer=Adam(learning_rate), loss="categorical_crossentropy", metrics='accuracy')
     model.summary()
+
+    return model
 
 data = load_digits()
 X = data.data
